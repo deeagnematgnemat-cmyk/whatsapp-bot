@@ -52,8 +52,7 @@ function getTargetUser(msg) {
 }
 
 async function startBot() {
-    // تم تغيير اسم المجلد هنا لضمان بدء جلسة جديدة نظيفة كلياً وطلب كود الاقتران فوراً
-    const { state, saveCreds } = await useMultiFileAuthState('eren_session_new');
+    const { state, saveCreds } = await useMultiFileAuthState('eren_clean_session');
 
     const sock = makeWASocket({
         auth: state,
@@ -83,7 +82,7 @@ async function startBot() {
                     } catch (err) {
                         console.log('خطأ في طلب رمز الاقتران:', err);
                     }
-                }, 4000);
+                }, 3000);
             }
         }
     });
@@ -410,7 +409,7 @@ async function startBot() {
 > 🔓 \`.فتح\` ↞ فتح الجروب للأعضاء
 > 🗑️ \`.حذف\` ↞ حذف رسالة محددة (بالرد عليها)
 > 📢 \`.الكل\` أو \`.منشن\` ↞ منشن جماعي لكل الأعضاء
-> 👑 \`.رفع @عضو\` رفع عضو إلى مشرف
+> 👑 \`.رفع @عضو\` ↞ ترقية عضو إلى مشرف
 > 📉 \`.تنزيل @عضو\` ↞ إزالة الإشراف عن عضو
 > 🚨 \`.طرد @عضو\` ↞ طرد العضو من المجموعة
 > ⚠️ \`.اضف_انذار @عضو\` ↞ إضافة إنذار إداري للعضو
