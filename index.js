@@ -1,7 +1,7 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 
-const DEVELOPER_NUMBER = '962796163926'; // رقمك
+const DEVELOPER_NUMBER = '962795106901'; // الرقم الجديد للربط
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('arem_new_session');
@@ -17,7 +17,7 @@ async function startBot() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    // طلب رمز الاقتران إذا لم يكن البوت مسجلاً مسبقاً
+    // طلب رمز الاقتران تلقائياً للرقم الجديد إذا لم تكن الجلسة مسجلة
     if (!sock.authState.creds.registered) {
         setTimeout(async () => {
             try {
