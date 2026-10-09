@@ -52,7 +52,8 @@ function getTargetUser(msg) {
 }
 
 async function startBot() {
-    const { state, saveCreds } = await useMultiFileAuthState('arem_new_session');
+    // تم تغيير اسم المجلد هنا لضمان بدء جلسة جديدة نظيفة كلياً وطلب كود الاقتران فوراً
+    const { state, saveCreds } = await useMultiFileAuthState('eren_session_new');
 
     const sock = makeWASocket({
         auth: state,
@@ -71,17 +72,18 @@ async function startBot() {
         } else if (connection === 'open') {
             console.log('✅ تم اتصال البوت بنجاح وجاهز للعمل!');
 
-            // طلب رمز الاقتران بشكل آمن بعد فتح الاتصال تماماً إذا لم يكن مسجلاً
             if (!sock.authState.creds.registered) {
-                try {
-                    let code = await sock.requestPairingCode(DEVELOPER_NUMBER);
-                    code = code?.match(/.{1,4}/g)?.join('-') || code;
-                    console.log(`\n========================================`);
-                    console.log(`   رمز الاقتران الخاص بك: ${code}`);
-                    console.log(`========================================\n`);
-                } catch (err) {
-                    console.log('خطأ في طلب رمز الاقتران:', err);
-                }
+                setTimeout(async () => {
+                    try {
+                        let code = await sock.requestPairingCode(DEVELOPER_NUMBER);
+                        code = code?.match(/.{1,4}/g)?.join('-') || code;
+                        console.log(`\n========================================`);
+                        console.log(`   رمز الاقتران الخاص بك: ${code}`);
+                        console.log(`========================================\n`);
+                    } catch (err) {
+                        console.log('خطأ في طلب رمز الاقتران:', err);
+                    }
+                }, 4000);
             }
         }
     });
@@ -112,7 +114,6 @@ async function startBot() {
             let trimmedBody = body.trim();
             let lowerBody = trimmedBody.toLowerCase();
 
-            // --- التحقق من الوضع الخاص ---
             if (isGroup) {
                 const settings = getGroupSetting(from);
                 if (settings.botMode === 'private' && !isSenderDev) {
@@ -120,7 +121,6 @@ async function startBot() {
                 }
             }
 
-            // --- نظام الحماية التلقائي ---
             if (isGroup && !isSenderAdmin && !isSenderDev) {
                 const settings = getGroupSetting(from);
                 const mType = Object.keys(msg.message || {});
@@ -164,7 +164,6 @@ async function startBot() {
 
             logBotAction(`استخدام أمر (${cmd}) من قبل العضو ${cleanSenderNum}`);
 
-            // --- أوامر الإدارة ---
             if (['قفل', 'غلق', 'فتح', 'حذف', 'مسح', 'الكل', 'منشن', 'رفع', 'ترقية', 'ازل', 'تنزيل', 'طرد', 'اضف_انذار', 'ازل_انذار', 'صفر', 'عدد_الانذارات', 'كتم', 'الغاء_كتم', 'فك_كتم', 'تفعيل ادمن', 'توقيف ادمن', 'تفعيل ترحيب', 'توقيف ترحيب', 'تفعيل توديع', 'توقيف توديع', 'تغيير_الاسم', 'تغيير_الوصف', 'رابط_الجروب', 'الرابط'].includes(cmdBase) || cmd.startsWith('تغيير_الاسم') || cmd.startsWith('تغيير_الوصف') || cmd === 'تفعيل ادمن' || cmd === 'توقيف ادمن' || cmd === 'تفعيل ترحيب' || cmd === 'توقيف ترحيب' || cmd === 'تفعيل توديع' || cmd === 'توقيف توديع' || cmd === 'رابط_الجروب' || cmd === 'الرابط') {
                 if (!isSenderAdmin && !isSenderDev) {
                     return sock.sendMessage(from, { text: '❌ هذا الأمر مخصص للمشرفين والمطور فقط لا غير!' }, { quoted: msg });
@@ -267,7 +266,6 @@ async function startBot() {
                 }
             }
 
-            // --- أوامر قسم المطور ---
             if (['اضافة_مطور', 'حذف_مطور', 'قائمة_المطورين', 'سجل_البوت', 'اختبار', 'تفاعل', 'تفاعل_مطور', 'خاص', 'وضع_خاص', 'عام', 'وضع_عام', 'اعطاء', 'إذاعة', 'اذاعة', 'ريستارت', 'اعادة_تشغيل'].includes(cmdBase)) {
                 if (!isSenderDev) {
                     return sock.sendMessage(from, { text: '❌ هذا الأمر مخصص للمطور الأساسي فقط!' }, { quoted: msg });
@@ -321,7 +319,6 @@ async function startBot() {
                 process.exit(0);
             }
 
-            // --- أمر .بوت ---
             if (cmdBase === 'بوت') {
                 const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
                 const botWelcomeText = `🍷 *أَهْـلاً بِـكَ فِي عَالَمِ ${DEVELOPER_NAME}* 🍷
@@ -349,7 +346,6 @@ async function startBot() {
                 return;
             }
 
-            // --- أمر .اوامر أو .اقسام ---
             if (cmdBase === 'اوامر' || cmdBase === 'الاوامر' || cmdBase === 'اقسام') {
                 const menuText = `🗂️ *قَـائِـمَـةُ الأَقْـسَـامِ (${DEVELOPER_NAME}):*
 > 🛡️ \`.1\` ↞ الحماية
@@ -363,7 +359,6 @@ async function startBot() {
                 return;
             }
 
-            // --- قسم الحماية (الرقم 1) ---
             if (cmdBase === '1') {
                 const settings = getGroupSetting(from);
                 const text1 = `🛡️ *الحماية (لهذه المجموعة):*
@@ -383,7 +378,6 @@ async function startBot() {
                 return;
             }
 
-            // --- قسم المطور (الرقم 10) ---
             if (cmdBase === '10' || cmd === 'المطور' || cmd === 'مطور') {
                 if (!isSenderDev) {
                     return sock.sendMessage(from, { text: '❌ عذراً، هذا القسم مخصص للمطور الأساسي فقط!' }, { quoted: msg });
@@ -409,7 +403,6 @@ async function startBot() {
                 return;
             }
 
-            // --- قسم الإدارة (الرقم 11) ---
             if (cmdBase === '11' || cmd === 'الادارة' || cmd === 'الاداره') {
                 const adminMenuText = `⚡ *قِـسْـمُ الإِدَارَةِ وَالتَّحَكُّمِ:*
 
@@ -417,7 +410,7 @@ async function startBot() {
 > 🔓 \`.فتح\` ↞ فتح الجروب للأعضاء
 > 🗑️ \`.حذف\` ↞ حذف رسالة محددة (بالرد عليها)
 > 📢 \`.الكل\` أو \`.منشن\` ↞ منشن جماعي لكل الأعضاء
-> 👑 \`.رفع @عضو\` ↞ ترقية عضو إلى مشرف
+> 👑 \`.رفع @عضو\` رفع عضو إلى مشرف
 > 📉 \`.تنزيل @عضو\` ↞ إزالة الإشراف عن عضو
 > 🚨 \`.طرد @عضو\` ↞ طرد العضو من المجموعة
 > ⚠️ \`.اضف_انذار @عضو\` ↞ إضافة إنذار إداري للعضو
