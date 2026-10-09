@@ -53,7 +53,7 @@ function getTargetUser(msg) {
 
 async function startBot() {
     try {
-        const { state, saveCreds } = await useMultiFileAuthState('eren_stable_session');
+        const { state, saveCreds } = await useMultiFileAuthState('eren_bot_session');
         const { version } = await fetchLatestBaileysVersion();
 
         const sock = makeWASocket({
