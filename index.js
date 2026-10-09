@@ -63,27 +63,26 @@ async function startBot() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    if (!sock.authState.creds.registered) {
-        setTimeout(async () => {
-            try {
-                let code = await sock.requestPairingCode(DEVELOPER_NUMBER);
-                code = code?.match(/.{1,4}/g)?.join('-') || code;
-                console.log(`\n========================================`);
-                console.log(`   رمز الاقتران الخاص بك: ${code}`);
-                console.log(`========================================\n`);
-            } catch (err) {
-                console.log('خطأ في طلب رمز الاقتران:', err);
-            }
-        }, 5000);
-    }
-
-    sock.ev.on('connection.update', (update) => {
+    sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
             const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
             if (shouldReconnect) startBot();
         } else if (connection === 'open') {
             console.log('✅ تم اتصال البوت بنجاح وجاهز للعمل!');
+
+            // طلب رمز الاقتران بشكل آمن بعد فتح الاتصال تماماً إذا لم يكن مسجلاً
+            if (!sock.authState.creds.registered) {
+                try {
+                    let code = await sock.requestPairingCode(DEVELOPER_NUMBER);
+                    code = code?.match(/.{1,4}/g)?.join('-') || code;
+                    console.log(`\n========================================`);
+                    console.log(`   رمز الاقتران الخاص بك: ${code}`);
+                    console.log(`========================================\n`);
+                } catch (err) {
+                    console.log('خطأ في طلب رمز الاقتران:', err);
+                }
+            }
         }
     });
 
@@ -117,7 +116,7 @@ async function startBot() {
             if (isGroup) {
                 const settings = getGroupSetting(from);
                 if (settings.botMode === 'private' && !isSenderDev) {
-                    return; // إذا كان البوت خاصاً، لا يستجيب إلا للمطور ورقم البوت
+                    return; 
                 }
             }
 
@@ -165,7 +164,7 @@ async function startBot() {
 
             logBotAction(`استخدام أمر (${cmd}) من قبل العضو ${cleanSenderNum}`);
 
-            // --- أوامر الإدارة تتطلب مشرف أو مطور ---
+            // --- أوامر الإدارة ---
             if (['قفل', 'غلق', 'فتح', 'حذف', 'مسح', 'الكل', 'منشن', 'رفع', 'ترقية', 'ازل', 'تنزيل', 'طرد', 'اضف_انذار', 'ازل_انذار', 'صفر', 'عدد_الانذارات', 'كتم', 'الغاء_كتم', 'فك_كتم', 'تفعيل ادمن', 'توقيف ادمن', 'تفعيل ترحيب', 'توقيف ترحيب', 'تفعيل توديع', 'توقيف توديع', 'تغيير_الاسم', 'تغيير_الوصف', 'رابط_الجروب', 'الرابط'].includes(cmdBase) || cmd.startsWith('تغيير_الاسم') || cmd.startsWith('تغيير_الوصف') || cmd === 'تفعيل ادمن' || cmd === 'توقيف ادمن' || cmd === 'تفعيل ترحيب' || cmd === 'توقيف ترحيب' || cmd === 'تفعيل توديع' || cmd === 'توقيف توديع' || cmd === 'رابط_الجروب' || cmd === 'الرابط') {
                 if (!isSenderAdmin && !isSenderDev) {
                     return sock.sendMessage(from, { text: '❌ هذا الأمر مخصص للمشرفين والمطور فقط لا غير!' }, { quoted: msg });
@@ -268,7 +267,7 @@ async function startBot() {
                 }
             }
 
-            // --- أوامر قسم المطور (محمية حصرياً للمطورين) ---
+            // --- أوامر قسم المطور ---
             if (['اضافة_مطور', 'حذف_مطور', 'قائمة_المطورين', 'سجل_البوت', 'اختبار', 'تفاعل', 'تفاعل_مطور', 'خاص', 'وضع_خاص', 'عام', 'وضع_عام', 'اعطاء', 'إذاعة', 'اذاعة', 'ريستارت', 'اعادة_تشغيل'].includes(cmdBase)) {
                 if (!isSenderDev) {
                     return sock.sendMessage(from, { text: '❌ هذا الأمر مخصص للمطور الأساسي فقط!' }, { quoted: msg });
@@ -384,7 +383,7 @@ async function startBot() {
                 return;
             }
 
-            // --- قسم المطور (الرقم 10) - محمي حصرياً للمطورين ---
+            // --- قسم المطور (الرقم 10) ---
             if (cmdBase === '10' || cmd === 'المطور' || cmd === 'مطور') {
                 if (!isSenderDev) {
                     return sock.sendMessage(from, { text: '❌ عذراً، هذا القسم مخصص للمطور الأساسي فقط!' }, { quoted: msg });
