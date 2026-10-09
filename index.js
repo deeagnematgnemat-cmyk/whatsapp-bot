@@ -1,23 +1,20 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 
-const DEVELOPER_NUMBER = '962795106901'; // الرقم الجديد للربط
+const DEVELOPER_NUMBER = '962795106901';
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('arem_new_session');
-    const { version } = await fetchLatestBaileysVersion();
 
     const sock = makeWASocket({
-        auth: state, 
-        version, 
+        auth: state,
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
-        browser: ['Ubuntu', 'Chrome', '110.0.5481.100']
+        browser: ['Ubuntu', 'Chrome', '20.0.04']
     });
 
     sock.ev.on('creds.update', saveCreds);
 
-    // طلب رمز الاقتران تلقائياً للرقم الجديد إذا لم تكن الجلسة مسجلة
     if (!sock.authState.creds.registered) {
         setTimeout(async () => {
             try {
@@ -29,7 +26,7 @@ async function startBot() {
             } catch (err) {
                 console.log('خطأ في طلب رمز الاقتران:', err);
             }
-        }, 4000);
+        }, 5000);
     }
 
     sock.ev.on('connection.update', (update) => {
@@ -53,7 +50,6 @@ async function startBot() {
             const body = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
             const text = body.trim().toLowerCase();
 
-            // الأوامر البسيطة
             if (text === '.بوت') {
                 await sock.sendMessage(from, { text: '🤖 أهلاً بك! البوت يعمل بكفاءة وسرعة عالية 🟢' }, { quoted: msg });
             } 
